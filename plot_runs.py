@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import os
 
 def main():
-    parser = argparse.ArgumentParser(description="Plot return vs. episode from training logs.")
+    parser = argparse.ArgumentParser(description="Plot evaluation return vs. episode from training logs.")
     parser.add_argument("logs", nargs="+", help="One or more CSV log file paths to plot")
     parser.add_argument("--out", type=str, default=None, help="Path to save the plot image (e.g. plot.png)")
     args = parser.parse_args()
@@ -24,9 +24,9 @@ def main():
             reader = csv.reader(f)
             header = next(reader, None)
             
-            if header and 'episode' in header and 'return' in header:
+            if header and 'episode' in header and 'eval_return' in header:
                 ep_idx = header.index('episode')
-                ret_idx = header.index('return')
+                ret_idx = header.index('eval_return')
             else:
                 ep_idx = 0
                 ret_idx = 1
@@ -50,8 +50,8 @@ def main():
         plotted_any = True
 
     plt.xlabel('Episode')
-    plt.ylabel('Return')
-    plt.title('Return vs Episode')
+    plt.ylabel('Evaluation Return')
+    plt.title('Evaluation Return vs Episode')
     if plotted_any:
         plt.legend()
     plt.grid(True)

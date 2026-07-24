@@ -23,7 +23,7 @@ python train.py --episodes 300
 
 ## Logging and Plotting
 
-You can log the per-episode return and steps to a CSV file during training:
+You can log the evaluation return and speed to a CSV file during training (recorded every 25 episodes):
 
 ```bash
 python train.py --episodes 300 --log-path runs/baseline.csv

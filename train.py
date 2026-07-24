@@ -44,7 +44,7 @@ def train(episodes, seed, gamma, log_path=None, checkpoint=None):
     write_header = not os.path.exists(log_path)
     with open(log_path, 'a', newline='') as f:
       if write_header:
-        csv.writer(f).writerow(['episode', 'return', 'steps'])
+        csv.writer(f).writerow(['episode', 'eval_return', 'eval_speed'])
   torch.manual_seed(seed)
   env = TactileQuadrupedEnv(seed=seed)
   policy = TactilePolicy()
@@ -67,13 +67,12 @@ def train(episodes, seed, gamma, log_path=None, checkpoint=None):
     policy_loss.backward()
     optimizer.step()
 
-    if log_path:
-      import csv
-      with open(log_path, 'a', newline='') as f:
-        csv.writer(f).writerow([episode, sum(rewards), len(rewards)])
-
     if episode == 1 or episode % 25 == 0:
       evaluation_return, evaluation_speed = evaluate(policy, seed)
+      if log_path:
+        import csv
+        with open(log_path, 'a', newline='') as f:
+          csv.writer(f).writerow([episode, evaluation_return, evaluation_speed])
       print(f"episode={episode:4d} return={sum(rewards):7.2f} "
             f"eval_return={evaluation_return:7.2f} "
             f"eval_speed={evaluation_speed:+.3f} steps={len(rewards):3d}")
