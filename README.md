@@ -1,11 +1,16 @@
 # Tactile Quadruped RL (minimal)
 
-A from-scratch, deliberately small example of unsupervised tactile RL. It has
-no simulator dependency, camera, transformer, PPO framework, or robot I/O.
+A from-scratch, deliberately small example of tactile-only quadruped RL. It
+has no simulator dependency, camera, transformer, PPO framework, or robot I/O.
 
-The toy quadruped has four legs. The policy receives four body values and four
-normalized foot-contact forces, outputs four continuous leg commands, and is
-rewarded only for tactile novelty using Random Network Distillation (RND).
+The toy quadruped has four legs. The policy receives four body/proprioceptive
+values and four normalized foot-contact forces -- no vision, no ground-truth
+pose -- and outputs four continuous leg commands. It is trained with a
+supervised (extrinsic) reward: forward-velocity progress minus penalties for
+pitch instability, control effort, and falling. `tactile_quad/models.py` also
+ships a Random Network Distillation (`TactileRND`) module, unused by
+`train.py` for now -- it's there for a follow-up exercise that adds an
+intrinsic novelty bonus on top of this baseline.
 
 ## Run
 

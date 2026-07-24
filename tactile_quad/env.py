@@ -4,10 +4,13 @@ import numpy as np
 
 
 class TactileQuadrupedEnv:
-  """Toy environment used to demonstrate tactile-only intrinsic learning.
+  """Toy environment used to demonstrate tactile-only locomotion learning.
 
   Observation: [height, pitch, forward_velocity, pitch_velocity, contacts(4)].
   Action: one stance command in [-1, 1] for each leg.
+  Reward: forward-velocity progress minus pitch-instability and action-effort
+    penalties, plus a fall penalty. Computed only from proprioception and the
+    four tactile contact forces -- no vision, no ground-truth pose.
   """
 
   observation_dim = 8
@@ -41,8 +44,17 @@ class TactileQuadrupedEnv:
     self.pitch_velocity = 0.88 * self.pitch_velocity + 0.025 * (front_support - rear_support)
     self.pitch = np.clip(self.pitch + self.pitch_velocity, -0.7, 0.7)
     self.height = np.clip(0.28 + 0.09 * support - 0.04 * abs(self.pitch), 0.05, 0.45)
-    done = self.step_count >= self.horizon or self.height < 0.10
-    return self._observation(contacts), done
+    fell = self.height < 0.10
+    done = self.step_count >= self.horizon or fell
+    reward = self._reward(action, fell)
+    return self._observation(contacts), reward, done
+
+  def _reward(self, action, fell):
+    forward_reward = self.velocity
+    stability_penalty = 0.4 * self.pitch ** 2
+    effort_penalty = 0.02 * float(np.mean(np.square(action)))
+    fall_penalty = 5.0 if fell else 0.0
+    return float(forward_reward - stability_penalty - effort_penalty - fall_penalty)
 
   def _contacts(self, action):
     # Positive values represent normalized normal force at each foot.

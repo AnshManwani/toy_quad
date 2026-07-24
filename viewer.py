@@ -109,7 +109,7 @@ class ToyViewer:
   def update(self, _):
     self.time += 1
     self.last_action = self._action()
-    self.observation, done = self.env.step(self.last_action)
+    self.observation, _, done = self.env.step(self.last_action)
     if done:
       self.observation = self.env.reset()
 
