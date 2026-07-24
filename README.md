@@ -21,6 +21,13 @@ pip install -r requirements.txt
 python train.py --episodes 300
 ```
 
+Training saves the policy weights as `trained_policy.pt`. To watch the actual
+trained policy (rather than the hand-written demo gait), render it with:
+
+```bash
+python viewer.py --checkpoint trained_policy.pt --save trained_policy.gif
+```
+
 ## View the toy quadruped
 
 ```bash

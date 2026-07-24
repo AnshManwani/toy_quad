@@ -1,6 +1,5 @@
-"""Train a tactile MLP policy with a supervised forward-locomotion reward."""
+"""After repair: REINFORCE trainer with deterministic policy evaluation."""
 
-import argparse
 import numpy as np
 import torch
 
@@ -18,7 +17,7 @@ def compute_returns(rewards, gamma):
 
 
 def evaluate(policy, seed, episodes=8):
-  """Run the deterministic policy mean, separately from noisy training."""
+  """Measure the action mean that is used by trained-policy playback."""
   env = TactileQuadrupedEnv(seed=seed + 10_000)
   returns, final_speeds = [], []
   policy.eval()
@@ -36,7 +35,7 @@ def evaluate(policy, seed, episodes=8):
   return float(np.mean(returns)), float(np.mean(final_speeds))
 
 
-def train(episodes, seed, gamma, checkpoint):
+def train(episodes, seed, gamma):
   torch.manual_seed(seed)
   env = TactileQuadrupedEnv(seed=seed)
   policy = TactilePolicy()
@@ -64,18 +63,3 @@ def train(episodes, seed, gamma, checkpoint):
       print(f"episode={episode:4d} return={sum(rewards):7.2f} "
             f"eval_return={evaluation_return:7.2f} "
             f"eval_speed={evaluation_speed:+.3f} steps={len(rewards):3d}")
-
-  if checkpoint:
-    torch.save({"policy_state_dict": policy.state_dict(), "seed": seed,
-                "episodes": episodes}, checkpoint)
-    print(f"Saved policy checkpoint to {checkpoint}")
-
-
-if __name__ == "__main__":
-  parser = argparse.ArgumentParser()
-  parser.add_argument("--episodes", type=int, default=300)
-  parser.add_argument("--seed", type=int, default=0)
-  parser.add_argument("--gamma", type=float, default=0.99)
-  parser.add_argument("--checkpoint", default="trained_policy.pt",
-                      help="path for the trained policy checkpoint")
-  train(**vars(parser.parse_args()))

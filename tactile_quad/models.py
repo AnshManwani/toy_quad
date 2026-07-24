@@ -18,7 +18,10 @@ class TactilePolicy(nn.Module):
 
   def sample(self, observation):
     distribution = Normal(self.net(observation), self.log_std.exp())
-    latent_action = distribution.rsample()
+    # REINFORCE needs a score-function gradient.  ``rsample`` makes the
+    # sampled latent action part of the gradient graph, which cancels that
+    # gradient in ``log_prob`` for this non-differentiable environment.
+    latent_action = distribution.sample()
     return torch.tanh(latent_action), distribution.log_prob(latent_action).sum(-1)
 
 
