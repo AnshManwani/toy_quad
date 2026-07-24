@@ -35,6 +35,13 @@ To visualize the training progress, use the included plotting script. It can ove
 python plot_runs.py runs/baseline.csv --out plot.png
 ```
 
+Training saves the policy weights as `trained_policy.pt`. To watch the actual
+trained policy (rather than the hand-written demo gait), render it with:
+
+```bash
+python viewer.py --checkpoint trained_policy.pt --save trained_policy.gif
+```
+
 ## View the toy quadruped
 
 ```bash

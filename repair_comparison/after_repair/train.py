@@ -1,6 +1,5 @@
-"""Train a tactile MLP policy with a supervised forward-locomotion reward."""
+"""After repair: REINFORCE trainer with deterministic policy evaluation."""
 
-import argparse
 import numpy as np
 import torch
 
@@ -18,7 +17,7 @@ def compute_returns(rewards, gamma):
 
 
 def evaluate(policy, seed, episodes=8):
-  """Run the deterministic policy mean, separately from noisy training."""
+  """Measure the action mean that is used by trained-policy playback."""
   env = TactileQuadrupedEnv(seed=seed + 10_000)
   returns, final_speeds = [], []
   policy.eval()
@@ -36,15 +35,7 @@ def evaluate(policy, seed, episodes=8):
   return float(np.mean(returns)), float(np.mean(final_speeds))
 
 
-def train(episodes, seed, gamma, log_path=None, checkpoint=None):
-  if log_path:
-    import os
-    import csv
-    os.makedirs(os.path.dirname(log_path) or '.', exist_ok=True)
-    write_header = not os.path.exists(log_path)
-    with open(log_path, 'a', newline='') as f:
-      if write_header:
-        csv.writer(f).writerow(['episode', 'return', 'steps'])
+def train(episodes, seed, gamma):
   torch.manual_seed(seed)
   env = TactileQuadrupedEnv(seed=seed)
   policy = TactilePolicy()
@@ -67,29 +58,8 @@ def train(episodes, seed, gamma, log_path=None, checkpoint=None):
     policy_loss.backward()
     optimizer.step()
 
-    if log_path:
-      import csv
-      with open(log_path, 'a', newline='') as f:
-        csv.writer(f).writerow([episode, sum(rewards), len(rewards)])
-
     if episode == 1 or episode % 25 == 0:
       evaluation_return, evaluation_speed = evaluate(policy, seed)
       print(f"episode={episode:4d} return={sum(rewards):7.2f} "
             f"eval_return={evaluation_return:7.2f} "
             f"eval_speed={evaluation_speed:+.3f} steps={len(rewards):3d}")
-
-  if checkpoint:
-    torch.save({"policy_state_dict": policy.state_dict(), "seed": seed,
-                "episodes": episodes}, checkpoint)
-    print(f"Saved policy checkpoint to {checkpoint}")
-
-
-if __name__ == "__main__":
-  parser = argparse.ArgumentParser()
-  parser.add_argument("--episodes", type=int, default=300)
-  parser.add_argument("--seed", type=int, default=0)
-  parser.add_argument("--gamma", type=float, default=0.99)
-  parser.add_argument("--log-path", type=str, default=None)
-  parser.add_argument("--checkpoint", default="trained_policy.pt",
-                      help="path for the trained policy checkpoint")
-  train(**vars(parser.parse_args()))

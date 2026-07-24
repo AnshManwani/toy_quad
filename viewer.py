@@ -9,10 +9,12 @@ import argparse
 
 import matplotlib.pyplot as plt
 import numpy as np
+import torch
 from matplotlib.animation import FuncAnimation
 from matplotlib.patches import Circle, Polygon
 
 from tactile_quad.env import TactileQuadrupedEnv
+from tactile_quad.models import TactilePolicy
 
 
 LEG_NAMES = ("FL", "FR", "RL", "RR")
@@ -27,16 +29,24 @@ LEG_LAYOUT = (
 
 
 class ToyViewer:
-  def __init__(self, random_actions=False, seed=0):
+  def __init__(self, random_actions=False, checkpoint=None, seed=0):
     self.env = TactileQuadrupedEnv(seed=seed)
     self.observation = self.env.reset()
     self.random_actions = random_actions
+    self.policy = None
+    if checkpoint:
+      saved = torch.load(checkpoint, map_location="cpu", weights_only=True)
+      self.policy = TactilePolicy()
+      self.policy.load_state_dict(saved["policy_state_dict"])
+      self.policy.eval()
     self.time = 0
     self.last_action = np.zeros(4, dtype=np.float32)
 
     self.figure, (self.world_ax, self.tactile_ax) = plt.subplots(
         1, 2, figsize=(11, 4.8), gridspec_kw={"width_ratios": [1.45, 1]})
-    self.figure.suptitle("Toy tactile quadruped: contact forces made visible",
+    title = ("Trained tactile policy: contact forces made visible"
+             if self.policy else "Toy tactile quadruped: contact forces made visible")
+    self.figure.suptitle(title,
                           fontsize=14, fontweight="bold")
     self.figure.subplots_adjust(top=0.82, wspace=0.3)
 
@@ -94,6 +104,11 @@ class ToyViewer:
                                             fontsize=10, color="#1e293b")
 
   def _action(self):
+    if self.policy is not None:
+      # Playback is deterministic: use the policy mean, not a sampled action.
+      with torch.no_grad():
+        observation = torch.as_tensor(self.observation).unsqueeze(0)
+        return torch.tanh(self.policy.net(observation)).squeeze(0).numpy()
     if self.random_actions:
       return self.env.rng.uniform(-1, 1, size=4)
     # A simple diagonal alternating gait: FL/RR then FR/RL.
@@ -156,13 +171,16 @@ def main():
   parser = argparse.ArgumentParser()
   parser.add_argument("--random", action="store_true",
                       help="use random commands instead of the demo gait")
+  parser.add_argument("--checkpoint", metavar="PATH",
+                      help="play back the deterministic action mean of a trained policy")
   parser.add_argument("--seed", type=int, default=0)
   parser.add_argument("--save", metavar="PATH",
                       help="save a GIF instead of opening a GUI window")
   parser.add_argument("--frames", type=int, default=200,
                       help="number of frames when using --save (default: 200)")
   args = parser.parse_args()
-  viewer = ToyViewer(random_actions=args.random, seed=args.seed)
+  viewer = ToyViewer(random_actions=args.random, checkpoint=args.checkpoint,
+                     seed=args.seed)
   animation_kwargs = dict(interval=50, blit=False, cache_frame_data=False)
   if args.save:
     animation_kwargs["frames"] = args.frames
