@@ -17,7 +17,16 @@ def compute_returns(rewards, gamma):
   return returns
 
 
-def train(episodes, seed, gamma):
+def train(episodes, seed, gamma, log_path=None):
+  if log_path:
+    import os
+    import csv
+    os.makedirs(os.path.dirname(log_path) or '.', exist_ok=True)
+    write_header = not os.path.exists(log_path)
+    with open(log_path, 'a', newline='') as f:
+      if write_header:
+        csv.writer(f).writerow(['episode', 'return', 'steps'])
+
   torch.manual_seed(seed)
   env = TactileQuadrupedEnv(seed=seed)
   policy = TactilePolicy()
@@ -40,6 +49,11 @@ def train(episodes, seed, gamma):
     policy_loss.backward()
     optimizer.step()
 
+    if log_path:
+      import csv
+      with open(log_path, 'a', newline='') as f:
+        csv.writer(f).writerow([episode, sum(rewards), len(rewards)])
+
     if episode == 1 or episode % 25 == 0:
       print(f"episode={episode:4d} return={sum(rewards):7.2f} "
             f"steps={len(rewards):3d}")
@@ -50,4 +64,5 @@ if __name__ == "__main__":
   parser.add_argument("--episodes", type=int, default=300)
   parser.add_argument("--seed", type=int, default=0)
   parser.add_argument("--gamma", type=float, default=0.99)
+  parser.add_argument("--log-path", type=str, default=None)
   train(**vars(parser.parse_args()))

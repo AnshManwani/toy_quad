@@ -21,6 +21,20 @@ pip install -r requirements.txt
 python train.py --episodes 300
 ```
 
+## Logging and Plotting
+
+You can log the per-episode return and steps to a CSV file during training:
+
+```bash
+python train.py --episodes 300 --log-path runs/baseline.csv
+```
+
+To visualize the training progress, use the included plotting script. It can overlay multiple runs for comparison:
+
+```bash
+python plot_runs.py runs/baseline.csv --out plot.png
+```
+
 ## View the toy quadruped
 
 ```bash
